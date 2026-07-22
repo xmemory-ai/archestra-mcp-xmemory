@@ -1,6 +1,6 @@
 """Validate the Archestra catalogue manifests in this directory.
 
-Three checks, in order of authority:
+Five checks, in order of authority:
 
 1. JSON Schema validation of both manifests against the *live* MCP Catalog API's OpenAPI spec
    (``https://archestra.ai/mcp-catalog/api/docs``, component ``ArchestraMcpServerManifest``) —
@@ -14,7 +14,10 @@ Three checks, in order of authority:
    the admin manifest must state its instance-management-only scope, and each manifest tool that has
    a canonical ``*_DESCRIPTION`` must share distinctive vocabulary with that canon's headline
    sentence — a tripwire for one-liners drifting from what the server actually tells agents.
-4. Liveness of the URLs the manifests point reviewers at (server, docs, OAuth discovery).
+4. Icon consistency: each manifest's ``icon`` must be ``logo.svg`` inlined as a data URI. Archestra
+   renders the icon from the manifest itself (every live catalog entry with an icon uses a data URI,
+   not a URL), so the bytes are duplicated into the JSON and this keeps that copy honest.
+5. Liveness of the URLs the manifests point reviewers at (server, docs, OAuth discovery).
 
 Run from the repo root:
 
@@ -26,6 +29,7 @@ Checks 2 and 3 need the xmemory monorepo sources (``api/``); when this directory
 """
 
 import ast
+import base64
 import copy
 import json
 import re
@@ -41,6 +45,7 @@ HERE = Path(__file__).resolve().parent
 REPO_ROOT = HERE.parents[1]
 OPENAPI_URL = "https://archestra.ai/mcp-catalog/api/docs"
 MANIFESTS = ("xmemory.manifest.json", "xmemory-admin.manifest.json")
+LOGO_FILE = "logo.svg"
 
 # Manifest tool -> canonical description constant in api/describe.py. Tools absent here (the
 # suggestion lifecycle, admin listing/getters) have no describe.py canon and are skipped.
@@ -167,6 +172,28 @@ def check_descriptions(manifests: dict[str, dict[str, Any]], failures: list[str]
     print(f"[descr]  tool one-liners vs describe.py canon: {'OK' if not drifted else f'{len(drifted)} drifted'}")
 
 
+def check_icon(manifests: dict[str, dict[str, Any]], failures: list[str]) -> None:
+    """Each manifest's `icon` must be the shipped logo, inlined as a data URI.
+
+    Archestra renders the icon from the manifest itself (every live catalog entry
+    with an icon uses a data URI, not a URL), so the bytes are duplicated into the
+    JSON. This keeps that copy honest against `logo.svg` rather than letting the
+    two drift silently.
+    """
+    logo = HERE / LOGO_FILE
+    if not logo.is_file():
+        failures.append(f"{LOGO_FILE} is missing")
+        print(f"[icon]   {LOGO_FILE}: MISSING")
+        return
+    expected = "data:image/svg+xml;base64," + base64.b64encode(logo.read_bytes()).decode()
+    for name, doc in manifests.items():
+        actual = doc.get("icon")
+        if actual != expected:
+            detail = "absent" if not actual else "does not match logo.svg"
+            failures.append(f"{name}: icon {detail} — re-inline {LOGO_FILE} as a data URI")
+        print(f"[icon]   {name}: {'OK' if actual == expected else 'DRIFT'}")
+
+
 def check_url(url: str) -> bool:
     request = urllib.request.Request(url, method="GET")
     try:
@@ -204,6 +231,8 @@ def main() -> int:
             print(f"[tools]  {name}: {'OK' if actual == expected else 'DRIFT'} ({len(actual)} tools)")
     else:
         print("[tools]  SKIPPED — xmemory monorepo sources not found (running standalone)")
+
+    check_icon(manifests, failures)
 
     if (REPO_ROOT / "api" / "describe.py").is_file():
         check_descriptions(manifests, failures)

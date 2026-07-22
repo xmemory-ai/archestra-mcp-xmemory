@@ -79,8 +79,8 @@ also advertises `openid`, which the listing does not request).
 
 Fields the Archestra pipeline computes itself (`quality_score`, `last_scraped_at`,
 `evaluation_model`, `raw_dependencies`) are carried as explicit `null` — the live schema marks them
-required-but-nullable, so the files validate as complete manifest documents. `score_breakdown` and
-the icon stay out entirely (pipeline-owned). `category: "Knowledge"` from their 36-value enum.
+required-but-nullable, so the files validate as complete manifest documents. `score_breakdown` stays out entirely
+(pipeline-owned); the `icon` is ours — see **Logo** below. `category: "Knowledge"` from their 36-value enum.
 
 ## Tools
 
@@ -143,6 +143,20 @@ meaningful parts are `items` (the result) and `errors`.
 | `admin_list_clusters`, `admin_get_cluster` | Cluster observability. |
 | `admin_generate_schema` | LLM: generate a fresh schema from a description. |
 | `admin_enhance_schema` | LLM: improve an existing schema. |
+
+## Logo
+
+[`logo.svg`](./logo.svg) is the xmemory mark. Archestra renders an entry's icon **from the manifest
+itself** — catalog entries carry a `data:` URI rather than a URL — so the logo is inlined into each
+manifest's `icon` field. SVG keeps that inline copy small (~1.8 KB as a data URI).
+
+Because the bytes are duplicated into the JSON, `validate.py` checks that each manifest's `icon`
+still matches `logo.svg`. After changing the logo, re-inline it:
+
+```bash
+python3 -c 'import base64,pathlib; p=pathlib.Path("logo.svg"); \
+print("data:image/svg+xml;base64,"+base64.b64encode(p.read_bytes()).decode())'
+```
 
 ## Testing the manifests
 
