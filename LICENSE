@@ -1,25 +1,21 @@
-xmemory — Archestra MCP Catalog listing
-Copyright (c) xmemory Inc. All rights reserved.
+MIT License
 
-This directory (the "Listing") — including the catalog manifests, the validation
-tooling, and the documentation — is proprietary to xmemory Inc.
+Copyright (c) 2026 xmemory Inc.
 
-GRANT. xmemory Inc. grants a limited, non-exclusive, royalty-free permission to:
-  (a) reproduce and redistribute the Listing solely to list, host, and distribute
-      the connector through the Archestra MCP Catalog, the Archestra platform's
-      MCP registry, and equivalent Archestra distribution channels; and
-  (b) install and use the Listing for the sole purpose of connecting to the
-      xmemory service.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-RESERVATION. All other rights are reserved. Except as expressly permitted above,
-the Listing may not be copied, modified, distributed, sublicensed, or used to
-create derivative works without xmemory Inc.'s prior written permission. The
-"xmemory" name and logo are trademarks of xmemory Inc.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-SERVICE TERMS. Use of the xmemory service is governed by the Terms & Conditions
-at https://xmemory.ai/terms-and-conditions.html and the Privacy Policy at
-https://xmemory.ai/privacy-policy.html.
-
-NO WARRANTY. The Listing is provided "AS IS", without warranty of any kind, and to
-the extent permitted by law xmemory Inc. disclaims all warranties and liability
-arising from its use.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

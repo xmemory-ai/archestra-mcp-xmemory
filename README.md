@@ -237,8 +237,8 @@ Archestra OAuth install re-runs dynamic client registration (one registered clie
 - Privacy: https://xmemory.ai/privacy-policy.html
 - Terms: https://xmemory.ai/terms-and-conditions.html
 
-© xmemory Inc. All rights reserved. The contents of this directory are proprietary. Permission is
-granted to redistribute them solely to list and distribute the connector through the Archestra MCP
-Catalog and Archestra platform distribution channels, and to install it solely to connect to the
-xmemory service; all other rights are reserved. See [`LICENSE`](./LICENSE). Use of xmemory is
-governed by the [Terms & Conditions](https://xmemory.ai/terms-and-conditions.html).
+© xmemory Inc. This listing — the manifests, the validation tooling, and the documentation — is
+released under the [MIT License](./LICENSE). The xmemory service it connects to, and the technology
+behind it, remain proprietary; see [`NOTICE`](./NOTICE) for the scope of the license and the
+trademark terms. Use of xmemory is governed by the
+[Terms & Conditions](https://xmemory.ai/terms-and-conditions.html).
