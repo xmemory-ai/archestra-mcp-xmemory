@@ -90,10 +90,11 @@ the admin confirmation, and an `/instance/<id>` connection loses its instance. T
 API drops `oauth_config` fields its schema does not define, `resource` among them, so check
 Protected Resource on any entry added from the catalog before authorizing it.
 
-Fields the Archestra pipeline computes itself (`quality_score`, `last_scraped_at`,
-`evaluation_model`, `raw_dependencies`) are carried as explicit `null` — the live schema marks them
-required-but-nullable, so the files validate as complete manifest documents. `score_breakdown` stays out entirely
-(pipeline-owned); the `icon` is ours — see **Logo** below. `category: "Knowledge"` from their 36-value enum.
+The manifests carry only fields the live schema defines. `github_info`, `programming_language` and
+`readme` are `null`: the schema requires them, and none applies to a remote server. The fields the
+catalog's retired evaluation pipeline used to fill (`quality_score`, `last_scraped_at`,
+`evaluation_model`, `framework`, `raw_dependencies`, `score_breakdown`) are left out. The `icon` is
+ours — see **Logo** below. `category: "Knowledge"` from their 38-value enum.
 
 ## Tools
 
