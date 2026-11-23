@@ -67,7 +67,7 @@ instance using the deep-link path and an API key from [console.xmemory.ai](https
 - [`xmemory.manifest.json`](./xmemory.manifest.json) — the data plane. Lists the 9 default
   instance tools (the opt-in schema-management group is granted only via the connect-page
   checkbox, so it is not advertised in the listing).
-- [`xmemory-admin.manifest.json`](./xmemory-admin.manifest.json) — the control plane (16
+- [`xmemory-admin.manifest.json`](./xmemory-admin.manifest.json) — the control plane (25
   `admin_*` tools).
 
 Both are modeled on the catalog's existing remote-OAuth entry (`linear__remote-mcp`): `server.type:
@@ -76,6 +76,11 @@ Both are modeled on the catalog's existing remote-OAuth entry (`linear__remote-m
 `https://oauth2.xmemory.ai`). `scopes` / `default_scopes` are pinned to `["read", "write"]` — the
 scopes our authorization server advertises in `scopes_supported` (verified live 2026-07-16; the AS
 also advertises `openid`, which the listing does not request).
+
+The admin manifest also sets `oauth_config.resource` to its server URL. Archestra does not derive
+the protected resource from `server_url`, and without it the xmemory sign-in page cannot tell an
+admin connection from a root one, so it shows the instance/admin chooser instead of the admin
+confirmation.
 
 Fields the Archestra pipeline computes itself (`quality_score`, `last_scraped_at`,
 `evaluation_model`, `raw_dependencies`) are carried as explicit `null` — the live schema marks them
@@ -127,10 +132,18 @@ and the response's `changes` block reports exactly what was created, updated, an
 > `decide_suggestions` → `apply_pending_decisions` and `update_instance_schema` commit a migration —
 > an agent should confirm with you before applying.
 
-### `xmemory-admin` (instance management)
+### `xmemory-admin` (instance and key management)
 
-Global account/fleet surface — no instance binding. Admin tools return a JSON envelope whose
-meaningful parts are `items` (the result) and `errors`.
+Global account/fleet surface — no instance binding. Most admin tools return a JSON envelope whose
+meaningful parts are `items` (the result) and `errors`; the schema and create tools, and every
+tool's early-out error path, return a flat `{"status": ...}` shape instead. `admin_get_api_key` and
+`admin_create_api_key` also return `{"status": "ok", "api_key": …}` flat, and `admin_list_api_keys`
+returns the envelope. `admin_get_setup_instructions` returns its fields plus `status: "ok"` rather
+than the envelope.
+
+A connection lists only the admin tools its key's role permits. `admin_create_api_key` is offered
+only on a connection that sends an account API key directly (`Authorization: Bearer xmem_...` on
+`https://mcp.xmemory.ai/admin`), never on an OAuth install.
 
 | Tool | What it does |
 |---|---|
@@ -138,11 +151,18 @@ meaningful parts are `items` (the result) and `errors`.
 | `admin_list_instances`, `admin_list_own_instances` | List instances. |
 | `admin_get_instance`, `admin_get_instance_by_id` | Inspect an instance. |
 | `admin_get_instance_schema_by_id` | Read an instance's schema (observability). |
+| `admin_get_setup_instructions` | How to connect a given instance on another surface; never returns a credential. |
 | `admin_update_instance_metadata(_by_id)`, `admin_patch_instance_metadata(_by_id)` | Update name/description. |
 | `admin_delete_instance`, `admin_delete_instance_by_id` | **Destructive** — permanently delete an instance. |
+| `admin_list_instance_memberships` | List the cluster memberships of the instances you can see, with the revision an edit needs. |
+| `admin_edit_instance_memberships` | Add or remove up to 100 instance–cluster memberships in one atomic change against that revision. Needs `instance.manage_clusters`; billing memberships cannot be removed. On a revision conflict, list again and review before retrying. |
 | `admin_list_clusters`, `admin_get_cluster` | Cluster observability. |
+| `admin_list_api_keys`, `admin_get_api_key`, `admin_create_api_key` | List and show the calling key's user's API keys (role, permissions, clusters, `is_super_admin`); create a limited key for one cluster (its secret is returned once). |
+| `admin_list_mintable_roles` | The API roles a key minted by this key may have (`xmemcli org create key --role`). |
 | `admin_generate_schema` | LLM: generate a fresh schema from a description. |
 | `admin_enhance_schema` | LLM: improve an existing schema. |
+| `admin_validate_yaml_schema` | Validate and repair schema YAML you already have (no LLM); returns `data_schema` and `schema_yaml`. |
+| `admin_convert_json_schema` | Convert a JSON Schema object to XMD (no LLM); returns `data_schema` and `schema_yaml`. |
 
 ## Logo
 
