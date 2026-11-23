@@ -15,6 +15,7 @@
   "oauth_config": {
     "name": "xmemory MCP",
     "server_url": "https://mcp.xmemory.ai",
+    "resource": "https://mcp.xmemory.ai",
     "client_id": "",
     "redirect_uris": [
       "http://localhost:8080/oauth/callback"
@@ -33,10 +34,12 @@
   "tools": [
     { "name": "write_async", "description": "Preferred write path — save create/update/delete intent in natural language; returns immediately" },
     { "name": "write", "description": "Synchronous write; use only when you must read the same data back in the same turn" },
-    { "name": "write_status", "description": "Diagnostic only — check once whether a specific async write landed" },
+    { "name": "write_status", "description": "Diagnostic only — check once whether a specific async write landed, and how long it took. queued, processing, extracting, extracted and applying all mean it is still in flight" },
     { "name": "read", "description": "Query the instance in natural language (lookups, aggregations, listings, traversals)" },
     { "name": "get_instance_id", "description": "Return the instance ID for the current session" },
+    { "name": "get_context_pack", "description": "Return the bound instance context pack with current owner instructions and optional live state" },
     { "name": "get_instance_schema", "description": "Return the instance's object/field/relation schema" },
+    { "name": "get_setup_instructions", "description": "How to connect this instance on another surface; never returns a credential" },
     { "name": "review_suggestions", "description": "See schema improvements proposed from your read/write traffic" },
     { "name": "decide_suggestions", "description": "Accept / reject / defer schema improvements proposals (bulk)" },
     { "name": "apply_pending_decisions", "description": "Commit accepted proposals as a migration" }
