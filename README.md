@@ -26,18 +26,24 @@ universal guarantee. Architecture and benchmarks: the [white paper](https://arxi
 product docs: [xmemory.ai](https://xmemory.ai), LLM-ready context: [llms.txt](https://xmemory.ai/llms.txt).
 
 The MCP server is **remote (Streamable HTTP)** at `https://mcp.xmemory.ai` — nothing to install or
-run. Tool descriptions are **dynamic**: on each `list_tools()` the server enriches them with the
-bound instance's object types and relations, so the model sees documentation tailored to the actual
-schema. Full MCP guide: **https://xmemory.ai/mcp**.
+run. The `read`, `write` and `write_async` descriptions name the bound instance in their first
+line and carry its purpose and object types at the end. The server `instructions` say the same,
+but several clients drop that field — so the bound instance's *name* is what reaches every client,
+while the purpose and object types reach only clients that do not truncate tool descriptions.
+Call `get_instance_schema` for the full schema. Full MCP guide: **https://xmemory.ai/mcp**.
 
 ## What Archestra is
 
 [Archestra](https://archestra.ai) is an open-source, self-hosted enterprise AI platform
 (`github.com/archestra-ai/archestra`) with two catalog surfaces, and this directory serves both:
 
-1. **Public MCP Catalog** — `archestra.ai/mcp-catalog`, a scored directory of MCP servers served
-   from `archestra.ai/mcp-catalog/api`. Entries are `ArchestraMcpServerManifest` JSON documents;
+1. **Public MCP Catalog** — `archestra.ai/mcp-catalog`, a hand-maintained directory of MCP servers
+   served from `archestra.ai/mcp-catalog/api` and built from `mcp-catalog/data/` in
+   `github.com/archestra-ai/archestra`. Entries are `ArchestraMcpServerManifest` JSON documents;
    the platform's registry picker shows only entries with `archestra_config.works_in_archestra: true`.
+   The catalog lists the data plane as `xmemory__remote-mcp`. It names remote entries after the
+   hostname alone, so the admin connection (same host, `/admin`) cannot get an entry of its own;
+   register it through the private registry instead.
 2. **Private MCP Registry** — inside each Archestra platform deployment; org admins register
    servers at runtime (UI `/mcp/registry` or `POST /api/internal_mcp_catalog`). Works today with
    no public listing needed — see the recipes below.
@@ -64,7 +70,7 @@ instance using the deep-link path and an API key from [console.xmemory.ai](https
 
 ## The manifests
 
-- [`xmemory.manifest.json`](./xmemory.manifest.json) — the data plane. Lists the 9 default
+- [`xmemory.manifest.json`](./xmemory.manifest.json) — the data plane. Lists the 11 default
   instance tools (the opt-in schema-management group is granted only via the connect-page
   checkbox, so it is not advertised in the listing).
 - [`xmemory-admin.manifest.json`](./xmemory-admin.manifest.json) — the control plane (25
@@ -77,10 +83,12 @@ Both are modeled on the catalog's existing remote-OAuth entry (`linear__remote-m
 scopes our authorization server advertises in `scopes_supported` (verified live 2026-07-16; the AS
 also advertises `openid`, which the listing does not request).
 
-The admin manifest also sets `oauth_config.resource` to its server URL. Archestra does not derive
-the protected resource from `server_url`, and without it the xmemory sign-in page cannot tell an
-admin connection from a root one, so it shows the instance/admin chooser instead of the admin
-confirmation.
+Both manifests also set `oauth_config.resource` (the registry form's **Protected Resource**) to
+their server URL. Archestra does not derive it from `server_url`, and without it the xmemory
+sign-in page loses the path hint: an admin connection shows the instance/admin chooser instead of
+the admin confirmation, and an `/instance/<id>` connection loses its instance. The public catalog
+API drops `oauth_config` fields its schema does not define, `resource` among them, so check
+Protected Resource on any entry added from the catalog before authorizing it.
 
 Fields the Archestra pipeline computes itself (`quality_score`, `last_scraped_at`,
 `evaluation_model`, `raw_dependencies`) are carried as explicit `null` — the live schema marks them
@@ -94,6 +102,10 @@ required-but-nullable, so the files validate as complete manifest documents. `sc
 The OAuth connect screen lets you choose exactly which tools to authorize; the schema-management
 group starts unchecked. API-key connections get the default set. Instance tools return flat JSON
 with a top-level `status` (`ok`/`error`) plus a `console_url` linking the operation in the console.
+The synchronous `write` tool has a third value: `status: "still_processing"` means the wait ran out
+while the write kept running. It is not a failure and must never be retried — a retry costs a second
+extraction that then collides with the first. That object carries `write_id`, `trace_id` and
+`message` in place of `console_url`; poll `write_status` once with the `write_id` for the outcome.
 
 **Core memory** (granted by default)
 
@@ -102,9 +114,11 @@ with a top-level `status` (`ok`/`error`) plus a `console_url` linking the operat
 | `write_async` | Preferred write path — save create/update/delete intent in natural language; returns immediately with a `write_id`. |
 | `write` | Synchronous write; blocks until committed, so use it only when you must read the same data back in the same turn. |
 | `read` | Query the instance in natural language (lookups, aggregations, listings, traversals). Not a free-text similarity search. |
-| `write_status` | Diagnostic only — check once whether a specific async write landed (`queued` / `processing` / `completed` / `failed` / `not_found`). |
+| `write_status` | Diagnostic only — check once whether a specific async write landed, and how long it took. `queued`, `processing`, `extracting`, `extracted` and `applying` all mean it is still in flight. |
 | `get_instance_id` | Return the instance ID for the current session. |
 | `get_instance_schema` | Return the instance's object/field/relation schema. |
+| `get_context_pack` | Return the bound instance's context pack with current owner instructions and optional live state. Needs `get_instance_schema` granted too. Live state is off by default; turning it on runs a billed read and needs the `read` grant. |
+| `get_setup_instructions` | How to connect this instance on another surface; never returns a credential. |
 
 There is no separate update or delete tool — writes express create, update, delete, and merge
 intent in natural language ("her email changed to x@y", "delete the meeting with Bob on Friday"),
@@ -217,7 +231,7 @@ our discovered registration endpoint ⇒ dynamic client registration; redirect U
   "oauthConfig": {
     "name": "xmemory",
     "server_url": "https://mcp.xmemory.ai",
-    "auth_server_url": "https://oauth2.xmemory.ai",
+    "resource": "https://mcp.xmemory.ai",
     "client_id": "",
     "redirect_uris": ["https://<your-archestra-host>/oauth-callback"],
     "scopes": ["read", "write"],
@@ -228,8 +242,10 @@ our discovered registration endpoint ⇒ dynamic client registration; redirect U
 ```
 
 **Static API key (headless / instance-pinned):** bind the entry to one instance via the deep-link
-URL and a bearer key — no browser flow. Archestra's `access_token` convention sends
-`Authorization: Bearer <token>` automatically:
+URL and a bearer key — no browser flow. The `access_token` field below declares `headerName` /
+`valuePrefix` explicitly. Archestra would fall back to `Authorization: Bearer <access_token>` for
+this field name anyway, but being explicit documents the contract and keeps working if the field is
+ever renamed:
 
 ```json
 {
@@ -242,7 +258,9 @@ URL and a bearer key — no browser flow. Archestra's `access_token` convention 
       "title": "xmemory API key",
       "description": "Account API key (xmem_...) from console.xmemory.ai",
       "required": true,
-      "sensitive": true
+      "sensitive": true,
+      "headerName": "Authorization",
+      "valuePrefix": "Bearer "
     }
   }
 }
