@@ -1,7 +1,7 @@
 {
   "name": "xmemory-ai__xmemory-admin",
   "display_name": "xmemory Admin",
-  "description": "Control plane for xmemory — create, list, inspect, and delete memory instances and generate their schemas. Instance management only: admin connections cannot read or write the data inside instances (use the main xmemory server for that). Includes destructive operations such as deleting an instance — use with care.",
+  "description": "Control plane for xmemory — create, list, inspect, and delete memory instances and generate their schemas. Instance and key management only: admin connections cannot read or write the data inside instances (use the main xmemory server for that). Includes destructive operations such as deleting an instance — use with care.",
   "author": {
     "name": "xmemory",
     "url": "https://xmemory.ai"
@@ -15,6 +15,7 @@
   "oauth_config": {
     "name": "xmemory Admin MCP",
     "server_url": "https://mcp.xmemory.ai/admin",
+    "resource": "https://mcp.xmemory.ai/admin",
     "client_id": "",
     "redirect_uris": [
       "http://localhost:8080/oauth/callback"
@@ -31,11 +32,19 @@
     "description": "xmemory admin MCP server (OAuth 2.1 + PKCE, dynamic client registration)"
   },
   "tools": [
+    { "name": "admin_list_instance_memberships", "description": "List visible cluster memberships for instances" },
+    { "name": "admin_edit_instance_memberships", "description": "Edit instance cluster memberships within the key scope" },
     { "name": "admin_generate_schema", "description": "Generate a YAML schema from free-form text via LLM" },
     { "name": "admin_enhance_schema", "description": "Improve an existing YAML schema based on a text description" },
+    { "name": "admin_validate_yaml_schema", "description": "Validate and repair XMD schema YAML you already have, without creating anything" },
+    { "name": "admin_convert_json_schema", "description": "Convert a JSON Schema object to XMD schema YAML, without creating anything" },
     { "name": "admin_create_instance", "description": "Create a new memory instance" },
     { "name": "admin_list_clusters", "description": "List clusters accessible to the caller" },
     { "name": "admin_get_cluster", "description": "Get a single cluster by ID" },
+    { "name": "admin_list_api_keys", "description": "List the API keys of the caller's user, with role, permissions, clusters and is_super_admin" },
+    { "name": "admin_get_api_key", "description": "Show one API key of the caller's user: role, permissions, clusters and is_super_admin" },
+    { "name": "admin_create_api_key", "description": "Create a key for the caller's user on one cluster, with a role no wider than the caller's; returns its secret once" },
+    { "name": "admin_list_mintable_roles", "description": "List the API roles a key minted by this API key may have" },
     { "name": "admin_list_instances", "description": "List instances in a cluster" },
     { "name": "admin_get_instance", "description": "Get instance metadata" },
     { "name": "admin_delete_instance", "description": "Permanently delete an instance — cannot be undone" },
@@ -45,6 +54,7 @@
     { "name": "admin_get_instance_by_id", "description": "Get an instance by ID (resolves its cluster)" },
     { "name": "admin_delete_instance_by_id", "description": "Permanently delete an instance by ID — cannot be undone" },
     { "name": "admin_get_instance_schema_by_id", "description": "Get a schema by instance ID (read-only fleet observability)" },
+    { "name": "admin_get_setup_instructions", "description": "How to connect a given instance on another surface; never returns a credential" },
     { "name": "admin_update_instance_metadata_by_id", "description": "Update instance metadata by instance ID" },
     { "name": "admin_patch_instance_metadata_by_id", "description": "Patch instance metadata by instance ID" }
   ],
